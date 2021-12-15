@@ -13,10 +13,15 @@
  * To change this template, choose Tools | Templates
  * and open the template in the editor.
  */
-package com.inzisoft.crypto;
+package com.inzisoft.util;
 
-public class ARIACryptoJNI
-{
+public class ARIACryptoJNI {
+	
+	static {
+		System.loadLibrary("InziiscFileCrypt");
+		System.loadLibrary("InziiscFileCryptARIAJNI");
+	}
+	
 	/**
 	 * 암복호화 객체 생성 
 	 * 
@@ -229,9 +234,4 @@ public class ARIACryptoJNI
 	 */
 	public static native int GetErrNo(long inziARIA);
 
-	static
-	{
-		System.loadLibrary("InziiscFileCrypt");
-		System.loadLibrary("InziiscFileCryptJNI");
-	}
 }

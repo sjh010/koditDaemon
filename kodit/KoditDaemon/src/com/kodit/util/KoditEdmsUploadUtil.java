@@ -27,10 +27,11 @@ import org.apache.http.impl.client.HttpClients;
 import org.apache.http.util.EntityUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
-import com.inzisoft.crypto.ARIACryptoJNI;
 import com.inzisoft.server.codec.ImageIOJNI;
+import com.inzisoft.util.ARIACryptoJNI;
 
 @Component
 public class KoditEdmsUploadUtil {
@@ -38,6 +39,9 @@ public class KoditEdmsUploadUtil {
 	private static final Logger logger = LoggerFactory.getLogger(KoditEdmsUploadUtil.class);
 
 	private ImageIOJNI imageIOJNI;
+	
+	@Value("${encrypt.key}")
+	private String encryptKey;
 	
 	/**
 	 * TIFF 파일 병합
@@ -47,14 +51,15 @@ public class KoditEdmsUploadUtil {
 	 * @return
 	 * @throws Exception
 	 */
-	public String mergeTiff(String[] fileList, String resultPath) {
+	public boolean mergeTiff(String[] fileList, String resultPath) {
 		
-		logger.info("===== mergeTiff ====");
+		logger.info("===== mergeTiff start ====");
 		
 		int count = fileList.length;
 		
 		if (count == 1) {
-			return fileList[0];
+			new File(fileList[0]).renameTo(new File(resultPath));
+			return true;
 		} else if (count > 1) {
 			imageIOJNI = new ImageIOJNI();
 			
@@ -67,23 +72,31 @@ public class KoditEdmsUploadUtil {
 			try {
 				FileUtils.copyFile(firstFile, new File(resultPath));
 			} catch (IOException e) {
-				logger.error("File copy fail");
-				e.printStackTrace();
+				logger.error("File copy fail", e);
 			}
 			
 			for (int i=1; i < fileList.length; i++) {
 				logger.info("merge {}", fileList[i]);
 				result = imageIOJNI.mergeTIFF_FILE(resultPath, fileList[i]);
 				
-				if (result > 0) {
+				if (result < 0) {
 					logger.error("fail merge - errorCode : {}", result);
+					return false;
 				}
 			}	
 			
-			return resultPath;
+			logger.info("===== mergeTiff end ====");
 			
+			File file = new File(resultPath);
+			
+			if (file.exists() && file.length() > 0) {
+				return true;
+			} else {
+				return false;
+			}	
 		}
-		return null;
+		
+		return false;
 	}
 	
 	/**
@@ -93,41 +106,49 @@ public class KoditEdmsUploadUtil {
 	 * @param resultPath	결과 파일 경로
 	 * @return
 	 */
-	public String encryptImageFile(String filePath, String resultPath) {
+	public boolean encryptImageFile(String filePath, String resultPath) {
 	
-		logger.info("===== encryptImageFile =====");
+		logger.info("===== encryptImageFile start=====");
+		logger.info("encrypt target file :  {}", filePath);
 		
-		long cryptoObj = ARIACryptoJNI.CreateObj();
-
-		if (cryptoObj == 0) {
+		long obj = ARIACryptoJNI.CreateObj();
+		
+		if(obj == 0) {
 			logger.error("Create cryptoObj failed");
-			return null;
+			return false;
 		}
 		
-		try {
-			// 신용보증기금 키
-			if (!ARIACryptoJNI.SetStringKey(cryptoObj, "#@10DNJFDP RKSEK@#")) {
-				logger.error("Failed to set keys, errNo = " + ARIACryptoJNI.GetErrNo(cryptoObj));
-				return null;
+		try{
+			// key setting
+			if(!ARIACryptoJNI.SetStringKey(obj, encryptKey)) {
+				logger.error("Failed to set keys, errNo = {}", ARIACryptoJNI.GetErrNo(obj));
+				return false;
 			}
 			
-			// 파일 암호화
-			if (!ARIACryptoJNI.Encrypt(cryptoObj, filePath, resultPath, false)) {
-				logger.error("Encrypt failed, errNo = " + ARIACryptoJNI.GetErrNo(cryptoObj));
-				return null;
+			// encrypt file
+			if (!ARIACryptoJNI.Encrypt(obj, filePath, resultPath, false)) {
+				logger.error("Encrypt failed, errNo = {}", ARIACryptoJNI.GetErrNo(obj));
+				return false;
 			}
 			
-			return resultPath;
+			File encryptFile = new File(resultPath);
+			
+			if (encryptFile.exists() && encryptFile.length() > 0) {
+				return true;
+			} else {
+				return false;
+			}
 		} catch (Exception e) {
-			logger.error("Exception", e);
-			return null;
+			logger.error("encrypt exception", e);
+			return false;
 		} finally {
-			ARIACryptoJNI.DestroyObj(cryptoObj);
+			ARIACryptoJNI.DestroyObj(obj);
+			logger.info("===== encryptImageFile end =====");
 		}
 	}
 
 	public String sendEdms(String url, String filePath) {
-		logger.info("===== Send edms =====");
+		logger.info("===== Send edms start =====");
 
 		RequestConfig.Builder requestBuilder = RequestConfig.custom();
 		HttpClientBuilder builder = HttpClientBuilder.create();
@@ -199,14 +220,17 @@ public class KoditEdmsUploadUtil {
 			} catch (IOException e) {
 				logger.error("Exception", e);
 			}
+			
+			logger.info("===== Send edms end =====");
 		}
 		
 		return null;
 	}
 
 	
-	public static String sendEdmsCustom(String edmsUrl, String filePath) {
-		logger.info("===== sendEdmsCustom =====");
+	public String sendEdmsCustom(String edmsUrl, String filePath) {
+		logger.info("===== sendEdmsCustom start =====");
+		
         CloseableHttpClient httpClient = HttpClients.createDefault();
         HttpPost httpPost = new HttpPost(edmsUrl);
         
@@ -217,7 +241,7 @@ public class KoditEdmsUploadUtil {
         	
 			builder.addBinaryBody("sendfile", fileBytes, ContentType.APPLICATION_OCTET_STREAM, FilenameUtils.getName(filePath));
 		} catch (IOException e) {
-			logger.error("Exception", e);
+			logger.error("File IO Exception", e);
 		}
 
         HttpEntity multipart = builder.build();
@@ -237,6 +261,8 @@ public class KoditEdmsUploadUtil {
             } catch (IOException e) {
                 logger.error("Exception", e);
             }
+            
+            logger.info("===== sendEdmsCustom end =====");
         }
         
         return null;

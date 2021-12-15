@@ -53,34 +53,37 @@ public class RequestHandler extends ChannelInboundHandlerAdapter {
 		String coverFilePath 	= fileList[0];	// 커버 이미지 경로
 		String originFilePath	= fileList[1];	// 본문 이미지 경로
 		
-		//////////////////////////////////////////////////////////////////////////////
-		// 이미지 병합 start
-		
 		sb = new StringBuilder();
 		sb.append(FilenameUtils.getFullPath(originFilePath));
 		sb.append(FilenameUtils.getBaseName(originFilePath));
 		sb.append("_Merge.tif");
-		
-		String mergeFilePath = koditEdmsUploadUtil.mergeTiff(fileList, sb.toString());
-		
-		// 이미지 병합 end
-		//////////////////////////////////////////////////////////////////////////////
-		
-		//////////////////////////////////////////////////////////////////////////////
-		// 이미지 암호화 start
-		sb = new StringBuilder(); 
-		sb.append(FilenameUtils.getFullPath(originFilePath));
-		sb.append(FilenameUtils.getBaseName(originFilePath));
-		sb.append("_Secu.tif");
-		
-		String encFilePath = koditEdmsUploadUtil.encryptImageFile(mergeFilePath, sb.toString());
+		String mergeFilePath = sb.toString();
 
+		String jspResponse = "FAIL";
 		
-		String response = koditEdmsUploadUtil.sendEdms(edmsUrl, encFilePath);
-		
-		logger.info("response : {}", response);
-		
-		channelFuture.channel().writeAndFlush(Unpooled.copiedBuffer(response, CharsetUtil.UTF_8));	
+		try {
+			// merge tiff
+			if (koditEdmsUploadUtil.mergeTiff(fileList, mergeFilePath)) {
+				sb = new StringBuilder(); 
+				sb.append(FilenameUtils.getFullPath(originFilePath));
+				sb.append(FilenameUtils.getBaseName(originFilePath));
+				sb.append("_Secu.tif");
+				
+				String encryptFilePath = sb.toString();
+
+				// encrypt image
+				if (koditEdmsUploadUtil.encryptImageFile(mergeFilePath, encryptFilePath)) {
+					// send edms 
+					jspResponse = koditEdmsUploadUtil.sendEdms(edmsUrl, encryptFilePath);
+					
+					logger.info("edms response : {}", jspResponse);
+				}
+			}
+		} catch (Exception e) {
+			logger.error("exception", e);
+		} finally {
+			channelFuture.channel().writeAndFlush(Unpooled.copiedBuffer(jspResponse, CharsetUtil.UTF_8));
+		}	
 	}
 
 	@Override
