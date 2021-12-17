@@ -28,6 +28,7 @@ public class KoditInbondServer {
 	
 	public void start() {
 		try {
+			logger.info("koditDaemon Start....");
 			// ChannelFuture : I/O operation의 결과나 상태를 제공하는 객체
 			// 지정한 host, port로 소켓을 바인딩하고 incoming connection을 받도록 준비함
 			ChannelFuture serverChannelFuture = serverBootstrap.bind(serverInetSocketAddress).sync();

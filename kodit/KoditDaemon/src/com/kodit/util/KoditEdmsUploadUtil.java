@@ -61,7 +61,15 @@ public class KoditEdmsUploadUtil {
 			new File(fileList[0]).renameTo(new File(resultPath));
 			return true;
 		} else if (count > 1) {
-			imageIOJNI = new ImageIOJNI();
+			try {
+				imageIOJNI = new ImageIOJNI();
+			} catch (UnsatisfiedLinkError e) {
+				logger.error("Image Module Exception", e);
+				return false;
+			} catch (Exception e) {
+				logger.error("Image Module Exception", e);
+				return false;
+			}
 			
 			int result = -1;
 			

@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 import com.kodit.util.KoditEdmsUploadUtil;
 
@@ -53,36 +54,53 @@ public class RequestHandler extends ChannelInboundHandlerAdapter {
 		String coverFilePath 	= fileList[0];	// 커버 이미지 경로
 		String originFilePath	= fileList[1];	// 본문 이미지 경로
 		
+		// create - merge file path
 		sb = new StringBuilder();
 		sb.append(FilenameUtils.getFullPath(originFilePath));
 		sb.append(FilenameUtils.getBaseName(originFilePath));
 		sb.append("_Merge.tif");
 		String mergeFilePath = sb.toString();
-
-		String jspResponse = "FAIL";
+		//
+		
+		StringBuilder jspResponse = new StringBuilder();
+		jspResponse.append("^^");
 		
 		try {
 			// merge tiff
 			if (koditEdmsUploadUtil.mergeTiff(fileList, mergeFilePath)) {
+				// create - encrypt file path
 				sb = new StringBuilder(); 
 				sb.append(FilenameUtils.getFullPath(originFilePath));
 				sb.append(FilenameUtils.getBaseName(originFilePath));
 				sb.append("_Secu.tif");
-				
 				String encryptFilePath = sb.toString();
-
+				//
+				
 				// encrypt image
 				if (koditEdmsUploadUtil.encryptImageFile(mergeFilePath, encryptFilePath)) {
 					// send edms 
-					jspResponse = koditEdmsUploadUtil.sendEdms(edmsUrl, encryptFilePath);
+					String edmsResponse = koditEdmsUploadUtil.sendEdms(edmsUrl, encryptFilePath);
 					
-					logger.info("edms response : {}", jspResponse);
+					logger.info("edms response : {}", edmsResponse);
+					
+					if (!StringUtils.isEmpty(edmsResponse)) {
+						edmsResponse = edmsResponse.replaceAll(";", "");
+						
+						jspResponse.append("Y^").append(edmsResponse);
+					} else {
+						jspResponse.append("Z^E004");
+					}
+				} else {
+					jspResponse.append("Z^E004");
 				}
+			} else {
+				jspResponse.append("Z^E004");
 			}
 		} catch (Exception e) {
 			logger.error("exception", e);
+			jspResponse.append("Z^E004");
 		} finally {
-			channelFuture.channel().writeAndFlush(Unpooled.copiedBuffer(jspResponse, CharsetUtil.UTF_8));
+			channelFuture.channel().writeAndFlush(Unpooled.copiedBuffer(jspResponse.toString(), CharsetUtil.UTF_8));
 		}	
 	}
 

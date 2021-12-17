@@ -21,6 +21,5 @@ public class KoditDaemon {
 		AnnotationConfigApplicationContext ctx = new AnnotationConfigApplicationContext(SpringConfigration.class);
 		
 		ctx.getBean(KoditInbondServer.class).start();
-		
 	}
 }

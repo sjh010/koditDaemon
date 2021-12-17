@@ -23,12 +23,10 @@ public class ImageIOJNI {
 		// 설치할 경로에 맞게 변경 필요
 		try {
 			logger.info("### Load Library ###");
-			System.out.println("LIBPATH : " + System.getenv("LIBPATH"));
-			System.out.println("java.library.path : " + System.getProperty("java.library.path"));
-			
 			System.loadLibrary("JNI_ImageIO");
-		} catch (Exception e) {
-			logger.error("library load fail.", e);
+		} catch (UnsatisfiedLinkError e) {
+			logger.error("library load fail.");
+			throw e;
 		}
 		
 	}

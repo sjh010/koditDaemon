@@ -1,4 +1,4 @@
-INZI_HOME=/pgms/InziSoft
+INZI_HOME=/pgms/inzisoft
 
 export LIBPATH=$LIBPATH:${INZI_HOME}/module
 
@@ -7,19 +7,17 @@ export INZISOFT_LICENSE_FILE=${INZI_HOME}/license/inzi.license.kodit.DCRAP.20211
 
 # prd1
 #export INZISOFT_LICENSE_FILE=${INZI_HOME}/license/inzi.license.kodit.PCRAP1.20211214_OP
-
 # prd2
 #export INZISOFT_LICENSE_FILE=${INZI_HOME}/license/inzi.license.kodit.PCRAP2.20211214_OP
-
 # dr
 #export INZISOFT_LICENSE_FILE=${INZI_HOME}/license/DR/inzi.license.kodit.PCRAP1.20211214_OP
 
+DAEMON_HOME=/apps/inzisoft/koditDaemon
 
 CLASSPATH=""
-# jar
-CLASSPATH=$CLASSPATH:${INZI_HOME}/koditDaemon/lib/*
-# class
-CLASSPATH=$CLASSPATH:${INZI_HOME}/koditDaemon/bin
+CLASSPATH=$CLASSPATH:${DAEMON_HOME}/lib/*
+CLASSPATH=$CLASSPATH:${DAEMON_HOME}/bin
+CLASSPATH=$CLASSPATH:${DAEMON_HOME}/config
 
 #PID Check
 pid=$(ps -ef |grep -v grep | grep "Dproject=koditDaemon" |awk {'print $2'})

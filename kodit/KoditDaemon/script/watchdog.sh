@@ -1,3 +1,5 @@
+WATCH_HOME=/apps/inzisoft/koditDaemon/script/watchdog
+
 while [ 1 ]
 do
   daemon_pid=`ps -ef | grep -v grep | grep "Dproject=koditDaemon" | grep -v vi | awk '{print $2}'`
@@ -6,8 +8,8 @@ do
   if [ "${daemon_pid}" == "" ]
   then
     echo "[$DATE] koditDaemon start" >> $WATCH_HOME/restart.log
-    watchdog_pid=`ps -ef | grep -v grep | grep "/bin/sh /home/sylim/dev/jhso/startkoditDaemon.sh" | grep -v vi | awk '{print $2}'`
-    /bin/sh startkoditDaemon.sh &
+    watchdog_pid=`ps -ef | grep -v grep | grep "/bin/sh /pgms/InziSoft/koditDaemon/script/start.sh" | grep -v vi | awk '{print $2}'`
+    /bin/sh /pgms/InziSoft/koditDaemon/script/start.sh &
     echo "[$DATE] koditDaemon start complete" >> $WATCH_HOME/restart.log
     
     kill -9 ${watchdog_pid}
