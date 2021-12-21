@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xml>
+<!-- configuration file for LogBack (slf4J implementation) See here for more 
+	details: http://gordondickens.com/wordpress/2013/03/27/sawing-through-the-java-loggers/ -->
+<configuration scan="true" scanPeriod="30 seconds">
+	<property name="LOG_DIR" value="E:\\" />
+	
+	<appender name="console" class="ch.qos.logback.core.ConsoleAppender">
+		<encoder>
+			<pattern>[%d] [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<appender name="fileAppender" class="ch.qos.logback.core.rolling.RollingFileAppender">
+		<file>${LOG_DIR}\\inzi.log</file>
+		<rollingPolicy
+			class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
+			<!-- daily rollover -->
+			<fileNamePattern>${LOG_DIR}/inzi.%d{yyyy-MM-dd}.log
+			</fileNamePattern>
+
+			<!-- keep 30 days' worth of history -->
+			<maxHistory>30</maxHistory>
+		</rollingPolicy>
+
+		<encoder>
+			<pattern>[%d] [%thread] %-5level %logger{36} - %msg%n</pattern>
+		</encoder>
+	</appender>
+
+	<logger name="com.inzisoft" level="INFO">
+		<appender-ref ref="console" />
+		<appender-ref ref="fileAppender" />
+	</logger>
+
+	<logger name="com.kodit.util.KoditEdmsUploadUtil" level="INFO">
+		<appender-ref ref="console" />
+		<appender-ref ref="fileAppender" />		
+	</logger>
+
+
+	<root level="DEBUG">
+		<appender-ref ref="fileAppender" />
+		<appender-ref ref="console" />
+	</root>
+</configuration>

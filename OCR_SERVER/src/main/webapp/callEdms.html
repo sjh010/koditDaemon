@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+
+<script type="text/javascript">
+	function callJsp() {
+		document.getElementById("jspForm").submit();
+	}
+</script>
+
+</head>
+<body onload="callJsp();">
+
+	<form id="jspForm" action="/sendEdms" method="get">
+		<input type="hidden" name="originFilePath" value="E:\\images\\originPage.tif" />
+		<input type="hidden" name="coverFilePath" value="E:\\images\\coverPage.tif" />
+	</form>
+
+</body>
+</html>
